@@ -28,7 +28,7 @@ namespace mxnet
     public:
       NDArray();
       NDArray(const std::vector<mx_uint> & shape, 
-        Context & context, 
+        const Context & context, 
         bool delay_alloc = true);
       NDArray(const mx_float * data, size_t size);
       void CopyData(mx_float * data, size_t size);
@@ -42,11 +42,11 @@ namespace mxnet
       NDArrayHandle handle_;
     };
 
-    class SymbolCreator {
+    class Operator {
     public:
-      SymbolCreator(const std::string & name);
-      SymbolCreator & operator = (const SymbolCreator & rhs);
-      SymbolCreator & SetParam(const std::string & name, const std::string & value);
+      Operator(const std::string & name);
+      Operator & operator = (const Operator & rhs);
+      Operator & SetParam(const std::string & name, const std::string & value);
       std::string & operator[](const std::string & param_name);
       Symbol CreateSymbol();
     private:
@@ -62,7 +62,7 @@ namespace mxnet
       Symbol(const Symbol & rhs);
       Symbol & operator = (const Symbol & rhs);
       ~Symbol();
-      Executor Bind(DeviceType dev_type, int dev_id,
+      Executor Bind(Context context,
         std::vector<NDArray> & in_args,
         std::vector<NDArray> & arg_grad_store,
         std::vector<OpReqType> & grad_req_type,
@@ -73,6 +73,12 @@ namespace mxnet
 
     class Executor {
     public:
+      Executor(const Symbol & symbol,
+        Context context,
+        std::vector<NDArray> & in_args,
+        std::vector<NDArray> & arg_grad_store,
+        std::vector<OpReqType> & grad_req_type,
+        std::vector<NDArray> & aux_states);
       Executor(const ExecutorHandle & h);
       void Forward();
       void Backward();
@@ -86,10 +92,7 @@ namespace mxnet
     class Mxnet {
     public:
       Mxnet();
-      Symbol CreateVariable(const std::string & name);
-      Symbol CreateSymbol(const std::string & name, 
-        const std::map<std::string, std::string> & params);    
-      SymbolCreator GetSymbolCreator(const std::string & name);
+      Operator GetSOperator(const std::string & name);
     private:
       std::map<std::string, AtomicSymbolCreator> symbol_creators_;
     };
